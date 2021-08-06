@@ -18,7 +18,7 @@ CREATE VIEW flow.location AS
         ,CASE
 		WHEN SPLIT_PART(location_string, '^',1) ~ '^(..NQ|HS15|HSDC)' then SPLIT_PART(SPLIT_PART(location_string, '^',2), ' ', 1)
 		WHEN SPLIT_PART(location_string, '^',2) ~ '^GWB' then SPLIT_PART(SPLIT_PART(location_string, '^',2), ' ', 2)
-		WHEN SPLIT_PART(location_string, '^',2) ~ '^(E02|E03)' then  SPLIT_PART(SPLIT_PART(location_string, '^',2), ' ', 1)
+		WHEN SPLIT_PART(location_string, '^',2) ~ '^(E01|E02|E03)' then  SPLIT_PART(SPLIT_PART(location_string, '^',2), ' ', 1)
 		WHEN SPLIT_PART(location_string, '^',2) ~ '^UCH T00 EAU' then  'T00 EAU'
 		WHEN SPLIT_PART(location_string,'^',1) != 'null' then SPLIT_PART(location_string,'^',1)
 		WHEN SPLIT_PART(location_string,'^',1) = 'null' 
@@ -36,16 +36,17 @@ CREATE VIEW flow.location AS
 	-- define building / physical site
 	,CASE 
 		-- THP3 includes podium theatres
-		    WHEN SPLIT_PART(location_string,'^',1) ~ '^(T0|T1|THP3|ED(?!H)|P03CV|P02IR|P02G|EAU|HS15|HSDC)'  THEN 'tower'
-            WHEN SPLIT_PART(location_string, '^',1) ~ '^..NQ' then 'NHNN'
+			WHEN SPLIT_PART(location_string,'^',1) ~ '^(T[0-1][0-9]?|10201|ED(?!H)|P0[2-3]|EAU|HSDC|HS15|HASU|AECU)' then 'tower'
+			WHEN SPLIT_PART(location_string,'^',2) ~ '^(UCH|UCLH|SDEC)' then 'tower'
+            WHEN SPLIT_PART(location_string,'^',1) ~ '^..NQ' then 'NHNN'
 		    WHEN SUBSTR(location_string,1,2) IN ('WM', 'WS')  THEN 'WMS'
             WHEN SPLIT_PART(location_string, '^',1) ~ '^MCC' or SPLIT_PART(location_string, '^',2) ~ '^MCC' then 'MCC'
 		    WHEN location_string LIKE '%NICU%' then 'NICU'
 		    WHEN location_string LIKE '%NHNN%' then 'NHNN'
-		    WHEN location_string LIKE 'EDH%' then 'EDH'
+		    WHEN location_string LIKE 'EDH%' or location_string like 'EDENT%' then 'EDH'
 		    WHEN location_string LIKE '%OUTSC%' then 'EXTERNAL'
-            WHEN SUBSTR(location_string, 1, 10) IN ('1021800003', '1021800004') then 'GWB'
-            WHEN SPLIT_PART(location_string, '^',2) ~ '^(E02|E03)' then 'EGA'
+			WHEN SPLIT_PART(location_string,'^',1) ~ '^(EGA|SCBU)' OR SPLIT_PART(location_string,'^',2) ~ '^(E0[1-4])' THEN 'EGA'
+			WHEN SPLIT_PART(location_string,'^',1) ~ '^(10218)' THEN 'GWB'
 		END AS building
 	-- define critical care
 	,CASE 
@@ -71,7 +72,7 @@ CREATE VIEW flow.location AS
 		WHEN location_string ~ '.*(SURGERY|THR|PROC|ENDO|TREAT|ANGI).*|.+(?<!CHA)IN?R\^.*' then 'procedure' 
 		WHEN location_string ~ '.*XR.*|.*MRI.*|.+CT\^.*|.*SCANNER.*' then 'imaging' 
 		END AS bed_type
-    FROM star_a.location
+    FROM star.location
 ORDER BY location_string ASC
 ;
 EXPLAIN ANALYZE SELECT * FROM flow.location;
